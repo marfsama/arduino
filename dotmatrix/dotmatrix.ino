@@ -15,7 +15,16 @@
 // give it a name:
 int pins[4] = {9,10,11,12};
 
-unsigned char data_array[8] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+unsigned char data_array[8] = {
+0b10000001, 
+0b11000011, 
+0b11111111, 
+0b10000001, 
+0b10100101, 
+0b10011001, 
+0b01000010, 
+0b00111100
+};
 
 // the setup routine runs once when you press reset:
 void setup() {                
@@ -31,29 +40,40 @@ void setup() {
   digitalWrite(SRCLK, 0);
 }
 
-void clock(int pin) {
+void clock(int pin, int delayms) {
   digitalWrite(pin, 1);
-  delay(1);
+  if (delayms > 0) {
+    delay(1);
+  }
   digitalWrite(pin, 0);
 }
 
 void hc595_out() {
-  clock(RCLK);
+  clock(RCLK,1);
 }
 
 void hc595_in(unsigned char data) {
   for (unsigned int i = 0; i < 8; i++) {
     digitalWrite(SDI, 0x80 & (data << i));
-    clock(SRCLK);
+    clock(SRCLK,0);
   }
+}
+
+unsigned char select_led(int pos) {
+  return 1 << pos;
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
- for (unsigned int i = 0; i < LENGTH(data_array); i++) {
-   hc595_in(~data_array[i]);
-   hc595_in(data_array[i]);
-   hc595_out();
-   delay(500);
- }
+ for (unsigned int x = 0; x < 8; x++) {
+    unsigned char row = 0, col = 0;
+    row = select_led(x);
+    col = data_array[x];
+    
+    hc595_in(~col);
+    hc595_in(row);
+    hc595_out();
+  }
+ 
 }
+
